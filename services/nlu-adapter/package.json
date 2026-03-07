@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "..\\..\\.venv\\Scripts\\uvicorn src.main:app --reload",
-    "lint": "..\\..\\.venv\\Scripts\\ruff check src tests && ..\\..\\.venv\\Scripts\\mypy src tests",
-    "test": "..\\..\\.venv\\Scripts\\pytest",
+    "dev": "uvicorn src.main:app --reload",
+    "lint": "ruff check src tests && mypy src tests",
+    "test": "pytest",
     "build": "echo \"Python FastAPI service built\""
   }
 }

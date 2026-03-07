@@ -1,12 +1,11 @@
+import logging
 import os
 import time
-from typing import List, Optional
+
+import faiss
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-import uvicorn
-import logging
-import faiss
-import numpy as np
 from sentence_transformers import SentenceTransformer
 
 logging.basicConfig(level=logging.INFO)
@@ -43,15 +42,15 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     answer: str
     confidence: float
-    sources: List[str]
+    sources: list[str]
     mode: str
     latency_ms: float
 
 class EmbeddingsRequest(BaseModel):
-    texts: List[str]
+    texts: list[str]
 
 class EmbeddingsResponse(BaseModel):
-    embeddings: List[List[float]]
+    embeddings: list[list[float]]
     latency_ms: float
 
 @app.get("/health")
@@ -67,10 +66,16 @@ def nlu_query(req: QueryRequest):
         # Simulate different intents based on keywords
         query_lower = req.query.lower()
         if "password" in query_lower or "reset" in query_lower:
-            answer = "To reset your password, please visit our self-service portal at account.example.com/reset. You will need your email and SMS 2FA ready."
+            answer = (
+                "To reset your password, please visit our self-service portal at "
+                "account.example.com/reset. You will need your email and SMS 2FA ready."
+            )
             confidence = 0.95
         elif "hours" in query_lower or "open" in query_lower:
-            answer = "Our business hours are Monday through Friday, 9:00 AM to 5:00 PM Eastern Time."
+            answer = (
+                "Our business hours are Monday through Friday, 9:00 AM to 5:00 PM "
+                "Eastern Time."
+            )
             confidence = 0.92
         else:
             answer = "I am a mock NLU. I did not understand the request."
@@ -118,7 +123,11 @@ def nlu_query(req: QueryRequest):
         # L2 = 2 - 2*cos_sim => cos_sim = 1 - (L2 / 2)
         confidence = max(0.0, 1.0 - (best_dist / 2.0))
         
-        answer = kb_documents[best_idx] if best_idx != -1 and best_idx < len(kb_documents) else "Unknown"
+        answer = (
+            kb_documents[best_idx]
+            if best_idx != -1 and best_idx < len(kb_documents)
+            else "Unknown"
+        )
         
         latency = (time.time() - start_time) * 1000
         logger.info(f"Local model processed query in {latency:.2f}ms. Confidence: {confidence:.2f}")
@@ -154,7 +163,7 @@ def nlu_embeddings(req: EmbeddingsRequest):
 # Admin / Internal API to populate FAISS index directly for local model demo
 # -------------------------------------------------------------
 class IndexRequest(BaseModel):
-    documents: List[str]
+    documents: list[str]
 
 @app.post("/nlu/admin/index")
 def populate_index(req: IndexRequest):
@@ -173,4 +182,4 @@ def populate_index(req: IndexRequest):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
     logger.info(f"Starting NLU adapter on port {port}")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)  # noqa: S104
