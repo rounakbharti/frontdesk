@@ -1,0 +1,11 @@
+{
+  "name": "@frontdesk/nlu-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "..\\..\\.venv\\Scripts\\uvicorn src.main:app --reload",
+    "lint": "..\\..\\.venv\\Scripts\\ruff check src tests && ..\\..\\.venv\\Scripts\\mypy src tests",
+    "test": "..\\..\\.venv\\Scripts\\pytest",
+    "build": "echo \"Python FastAPI service built\""
+  }
+}
