@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────────
+# Frontdesk AI — .gitignore
+# ──────────────────────────────────────────────
+
+# Environment / secrets
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# Node
+node_modules/
+dist/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.pyc
+
+# FAISS index files (large, regenerate locally)
+*.faiss
+*.index
+faiss_index/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker volumes (host-mounted data dirs, if any)
+.docker-data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

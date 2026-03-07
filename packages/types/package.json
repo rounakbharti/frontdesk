@@ -1,0 +1,19 @@
+{
+  "name": "@frontdesk/types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript types, Zod schemas, and event contracts for all Frontdesk services",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}

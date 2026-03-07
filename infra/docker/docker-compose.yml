@@ -1,0 +1,261 @@
+version: "3.9"
+
+# ============================================================
+# Frontdesk AI — Local Development Stack
+# All services are self-hosted and open-source.
+# Run with: ./dev.sh up
+# ============================================================
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
+
+services:
+  # ──────────────────────────────────────────────
+  # Zookeeper (required by Kafka)
+  # ──────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: frontdesk-zookeeper
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+
+  # ──────────────────────────────────────────────
+  # Apache Kafka (self-hosted, single-broker for local dev)
+  # ──────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: frontdesk-kafka
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "9101:9101"  # JMX
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: ""
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 4
+      # Topics are created by the init container below
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      start_period: 45s
+
+  # Kafka topic initializer — runs once to pre-create required topics
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: frontdesk-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command: |
+      "
+      echo 'Waiting for Kafka to be ready...'
+      kafka-topics --bootstrap-server kafka:29092 --list
+      echo 'Creating topics...'
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic help_request.created   --partitions 4 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic help_request.resolved  --partitions 4 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic help_request.timed_out --partitions 2 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic supervisor.answered    --partitions 4 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic kb.learn              --partitions 2 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic audit.events          --partitions 2 --replication-factor 1
+      echo 'Topics created successfully.'
+      kafka-topics --bootstrap-server kafka:29092 --list
+      "
+    restart: "no"
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL 16 — Primary Database
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: frontdesk-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: frontdesk
+      POSTGRES_USER: frontdesk
+      POSTGRES_PASSWORD: frontdesk_secret
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Performance tuning for development
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Auto-run init scripts on first boot
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "pg_isready -U frontdesk -d frontdesk"]
+
+  # ──────────────────────────────────────────────
+  # Redis 7 — Cache, TTL sorted sets, distributed locks
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: frontdesk-redis
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --save 60 1
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "redis-cli", "ping"]
+
+  # ──────────────────────────────────────────────
+  # Elasticsearch 8 — Knowledge Base full-text + vector search
+  # Single-node for local dev, cluster-ready config
+  # ──────────────────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: frontdesk-elasticsearch
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - cluster.name=frontdesk-cluster
+      - node.name=frontdesk-es-node-1
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - xpack.ml.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - bootstrap.memory_lock=false
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "curl -fsSL http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      start_period: 60s
+
+  # ──────────────────────────────────────────────
+  # Kibana — Elasticsearch UI (optional, for dev inspection)
+  # ──────────────────────────────────────────────
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.2
+    container_name: frontdesk-kibana
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["observability"]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      SERVER_NAME: frontdesk-kibana
+
+  # ──────────────────────────────────────────────
+  # Jaeger — Distributed tracing (OpenTelemetry compatible)
+  # ──────────────────────────────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    container_name: frontdesk-jaeger
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["observability"]
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "wget -qO- http://localhost:14269/ || exit 1"]
+      start_period: 15s
+
+  # ──────────────────────────────────────────────
+  # Prometheus — Metrics scraping
+  # ──────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: frontdesk-prometheus
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["observability"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  postgres-data:
+  redis-data:
+  elasticsearch-data:
+  prometheus-data:
+
+networks:
+  default:
+    name: frontdesk-network
+    driver: bridge

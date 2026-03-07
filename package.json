@@ -1,0 +1,33 @@
+{
+  "name": "frontdesk-ai",
+  "version": "1.0.0",
+  "description": "Human-in-the-Loop AI Supervisor — Frontdesk Engineering Assessment",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev:up": "bash dev.sh up",
+    "dev:down": "bash dev.sh down",
+    "dev:logs": "bash dev.sh logs",
+    "dev:reset": "bash dev.sh reset",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "workspaces": [
+    "services/*",
+    "web/*",
+    "workers/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "jest": "^29.7.0"
+  }
+}
