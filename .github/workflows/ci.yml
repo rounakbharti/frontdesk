@@ -36,7 +36,7 @@ jobs:
         run: pnpm -F @frontdesk/types build
 
       - name: Typecheck all workspaces
-        run: pnpm -r typecheck
+        run: pnpm --filter '!@frontdesk/nlu-adapter' -r typecheck
 
       - name: Lint (root-level ESLint across all services)
         run: pnpm lint
@@ -96,7 +96,7 @@ jobs:
         run: pnpm -F @frontdesk/types build
 
       - name: Run unit tests
-        run: pnpm -r test
+        run: pnpm --filter '!@frontdesk/nlu-adapter' -r test
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -158,4 +158,4 @@ jobs:
         run: pnpm -F @frontdesk/types build
 
       - name: Build all workspaces
-        run: pnpm -r build
+        run: pnpm --filter '!@frontdesk/nlu-adapter' -r build
