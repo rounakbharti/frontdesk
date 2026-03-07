@@ -13,7 +13,7 @@
     "dev:down": "bash dev.sh down",
     "dev:logs": "bash dev.sh logs",
     "dev:reset": "bash dev.sh reset",
-    "lint": "pnpm -r lint",
+    "lint": "eslint \"./{services,workers,packages}/*/src/**/*.ts\" --ext .ts",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck"
@@ -25,9 +25,12 @@
   ],
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
     "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
     "prettier": "^3.2.5",
-    "jest": "^29.7.0"
+    "typescript": "^5.3.3"
   }
 }
