@@ -10,6 +10,7 @@ export const producer = kafka.producer();
 
 export async function connectKafka() {
   await producer.connect();
+  // eslint-disable-next-line no-console
   console.log('Kafka producer connected.');
 }
 

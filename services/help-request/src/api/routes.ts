@@ -1,18 +1,16 @@
-import { FastifyInstance } from 'fastify';
-import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import type { FastifyInstance } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { pool } from '../db';
 import { redis } from '../redis';
-import { producer, kafka } from '../kafka';
+import { producer } from '../kafka';
 import { 
-  CreateHelpRequestBodySchema, 
-  ResolveHelpRequestBodySchema,
   HelpRequestStatus,
   KafkaTopics,
   RedisKeys,
-  HelpRequestCreatedEventSchema,
-  HelpRequestResolvedEventSchema,
   ResolutionSource,
+} from '@frontdesk/types';
+import type {
   CreateHelpRequestBody,
   ResolveHelpRequestBody
 } from '@frontdesk/types';
@@ -26,13 +24,19 @@ export default async function routes(app: FastifyInstance) {
 
   server.post('/help-requests', {
     schema: {
-      body: CreateHelpRequestBodySchema,
+      body: z.object({
+        customer_id: z.string().uuid(),
+        call_session_id: z.string().min(1),
+        question_text: z.string().min(1),
+        agent_confidence: z.number().min(0).max(1),
+        agent_answer: z.string().nullable().default(null)
+      }),
       response: {
         201: z.object({ success: z.boolean(), id: z.string() })
       }
     }
   }, async (request, reply) => {
-    const { customer_id, call_session_id, question_text, agent_confidence, agent_answer } = request.body as CreateHelpRequestBody;
+    const { customer_id, call_session_id, question_text, agent_confidence } = request.body as CreateHelpRequestBody;
 
     const client = await pool.connect();
     try {
@@ -81,7 +85,7 @@ export default async function routes(app: FastifyInstance) {
       producer.send({
         topic: KafkaTopics.HELP_REQUEST_CREATED,
         messages: [{ key: hrId, value: JSON.stringify(eventPayload) }]
-      }).catch((err: any) => request.log.error('Kafka send failed', err));
+      }).catch((err: unknown) => request.log.error({ err }, 'Kafka send failed'));
 
       // 4. Redis TTL tracking (Sort by expiry timestamp)
       const score = ttlExpiresAt.getTime();
@@ -99,7 +103,10 @@ export default async function routes(app: FastifyInstance) {
   server.post('/help-requests/:id/resolve', {
     schema: {
       params: z.object({ id: z.string().uuid() }),
-      body: ResolveHelpRequestBodySchema,
+      body: z.object({
+        resolution_text: z.string().min(1),
+        supervisor_id: z.string().uuid()
+      }),
       response: {
         200: z.object({ success: z.boolean() }),
         400: z.object({ error: z.string() })
@@ -197,7 +204,7 @@ export default async function routes(app: FastifyInstance) {
   server.get('/help-requests/pending', {
     schema: {
       response: {
-        200: z.object({ help_requests: z.array(z.any()) })
+        200: z.object({ help_requests: z.array(z.record(z.unknown())) })
       }
     }
   }, async () => {
