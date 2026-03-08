@@ -2,11 +2,16 @@ import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import routes from '../routes';
 import { nluBreaker } from '../../nlu/client';
+import { searchKnowledgeBase } from '../../kb/client';
 
 jest.mock('../../nlu/client', () => ({
   nluBreaker: {
     fire: jest.fn()
   }
+}));
+
+jest.mock('../../kb/client', () => ({
+  searchKnowledgeBase: jest.fn().mockResolvedValue([])
 }));
 
 global.fetch = jest.fn();
@@ -107,6 +112,41 @@ describe('Agent Service Routes', () => {
       method: 'POST',
       body: expect.stringContaining('A very complex question')
     }));
+  });
+
+  it('POST /agent/call-events - Auto-resolves via KB on low NLU confidence but high KB match', async () => {
+    // 1. NLU returns low confidence
+    (nluBreaker.fire as jest.Mock).mockResolvedValueOnce({
+      answer: "I am not sure.",
+      confidence: 0.40,
+      sources: []
+    });
+
+    // 2. KB returns high score match
+    (searchKnowledgeBase as jest.Mock).mockResolvedValueOnce([
+      { id: 'kb-1', score: 12.0, answer: 'Answer from KB' }
+    ]);
+
+    const payload = {
+      session_id: 'sess-kb',
+      caller_id: '+15551234567',
+      transcript: 'Known question'
+    };
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/agent/call-events',
+      payload
+    });
+
+    expect(response.statusCode).toBe(200);
+    const data = response.json();
+    expect(data.action).toBe('auto_resolved');
+    expect(data.nlu_confidence).toBe(0.9); // The artificial score we set
+    expect(data.message).toBe('Answer from KB');
+    
+    // Should NOT have called help-request service
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it('POST /agent/call-events - Utilizes fallback if NLU breaker fails completely', async () => {

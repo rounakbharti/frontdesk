@@ -2,11 +2,15 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { nluBreaker } from '../nlu/client';
+import { searchKnowledgeBase } from '../kb/client';
 import { 
   CallEventPayloadSchema, 
   NluMode 
 } from '@frontdesk/types';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { resolve } from 'path';
+
+dotenv.config({ path: resolve(__dirname, '../../../../.env') });
 
 // The routing threshold dictates whether we automatically answer the user or route them to a human.
 // Per architecture: >0.85 auto-resolve, otherwise human.
@@ -60,7 +64,6 @@ export default async function routes(app: FastifyInstance) {
     // 2. Evaluate routing threshold
     if (confidence >= CONFIDENCE_THRESHOLD) {
       // Agent is highly confident. We synthesize the audio to the caller immediately.
-      // In a real TS environment we would play an audio file or TTS to Twilio here.
       request.log.info({ session_id, caller_id, confidence }, 'High NLU confidence (>0.85). Auto-resolving query.');
       
       return reply.code(200).send({
@@ -70,8 +73,24 @@ export default async function routes(app: FastifyInstance) {
       });
     }
 
-    // 3. Lower confidence — route to human supervisor queue
-    request.log.info({ session_id, caller_id, confidence }, 'Low NLU confidence (<0.85). Routing to supervisors.');
+    // 3. Low confidence? Try KB search (Keyword/BM25) as a fallback
+    // This allows auto-learned answers to be used even if the model isn't "sure" semantically.
+    request.log.info({ session_id, transcript }, 'Low NLU confidence. Checking Knowledge Base fallback...');
+    const kbResults = await searchKnowledgeBase(transcript);
+    
+    // threshold for BM25 score varies, but a score > 10 is usually a strong keyword match
+    const bestKbMatch = kbResults[0];
+    if (bestKbMatch && bestKbMatch.score > 10.0) {
+      request.log.info({ kb_id: bestKbMatch.id, score: bestKbMatch.score }, 'Found strong KB match. Auto-resolving.');
+      return reply.code(200).send({
+        action: 'auto_resolved',
+        nlu_confidence: 0.9, // Artificial confidence for KB matches
+        message: bestKbMatch.answer
+      });
+    }
+
+    // 4. Still nothing? Route to human supervisor queue
+    request.log.info({ session_id, caller_id, confidence }, 'No reliable answer found. Routing to supervisors.');
 
     try {
       // We must call the Help Request Service to create a pending ticket

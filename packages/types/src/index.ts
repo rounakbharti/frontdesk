@@ -154,6 +154,7 @@ export const KbLearnEventSchema = z.object({
     question_text: z.string(),
     answer_text: z.string(),
     source_help_request_id: z.string().uuid().nullable(),
+    confidence_score: z.number().min(0).max(1).optional(),
   }),
 });
 export type KbLearnEvent = z.infer<typeof KbLearnEventSchema>;

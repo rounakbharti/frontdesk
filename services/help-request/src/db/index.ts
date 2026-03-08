@@ -1,8 +1,11 @@
 import { Pool } from 'pg';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { resolve } from 'path';
+
+dotenv.config({ path: resolve(__dirname, '../../../../.env') });
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
 });
 
 pool.on('error', (err) => {
