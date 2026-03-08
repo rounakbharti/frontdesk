@@ -1,16 +1,18 @@
+import { resolve } from "path";
+import dotenv from "dotenv";
+dotenv.config({ path: resolve(__dirname, "../../../.env"), override: true });
+
+import { initTracing, metricsPlugin } from "@frontdesk/observability";
+initTracing("notification-service");
+
 import Fastify from "fastify";
 import { Kafka } from "kafkajs";
-import dotenv from "dotenv";
-import { resolve } from "path";
 import { PassThrough } from "stream";
 import {
   HelpRequestCreatedEventSchema,
   HelpRequestResolvedEventSchema,
   KafkaTopics,
 } from "@frontdesk/types";
-
-// Load environment variables
-dotenv.config({ path: resolve(__dirname, "../../../.env") });
 
 const fastify = Fastify({ logger: true });
 
@@ -93,6 +95,7 @@ const start = async () => {
 
     // 4. Start Fastify SSE server
     const port = parseInt(process.env.PORT_NOTIFICATION || "3003", 10);
+    await fastify.register(metricsPlugin);
     await fastify.listen({ port, host: "0.0.0.0" });
 
   } catch (err) {

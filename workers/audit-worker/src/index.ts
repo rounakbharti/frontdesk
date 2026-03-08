@@ -1,14 +1,18 @@
+import { resolve } from 'path';
+import dotenv from 'dotenv';
+dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
+
+import { initTracing, metricsPlugin } from '@frontdesk/observability';
+initTracing('audit-worker');
+
+import Fastify from 'fastify';
 import { Kafka } from 'kafkajs';
 import pg from 'pg';
-import dotenv from 'dotenv';
-import { resolve } from 'path';
 import pino from 'pino';
 import {
   KafkaTopics,
   AuditEventSchema,
 } from '@frontdesk/types';
-
-dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
 
 const log = pino({ 
   level: process.env.LOG_LEVEL || 'info',
@@ -38,6 +42,12 @@ const consumer = kafka.consumer({ groupId: 'audit-worker-group' });
 async function run() {
   log.info('Audit worker starting — listening on audit_events');
   
+  // Start minimal metrics server for Prometheus
+  const metricsApp = Fastify();
+  await metricsApp.register(metricsPlugin);
+  await metricsApp.listen({ port: 4008, host: '0.0.0.0' });
+  log.info('Metrics server listening on port 4008');
+
   await consumer.connect();
   await consumer.subscribe({ 
     topic: KafkaTopics.AUDIT_EVENTS || 'audit.events', 

@@ -1,0 +1,30 @@
+{
+  "name": "@frontdesk/observability",
+  "version": "1.0.0",
+  "description": "Shared observability utilities for Frontdesk AI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.43.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.50.0",
+    "@opentelemetry/resources": "^1.23.0",
+    "@opentelemetry/sdk-node": "^0.50.0",
+    "@opentelemetry/sdk-trace-base": "^1.23.0",
+    "@opentelemetry/sdk-trace-node": "^1.23.0",
+    "@opentelemetry/semantic-conventions": "^1.23.0",
+    "fastify": "^4.27.0",
+    "fastify-plugin": "^4.5.1",
+    "prom-client": "^15.1.0"
+  },
+  "devDependencies": {
+    "@hapi/catbox": "^12.1.1",
+    "@hapi/iron": "^7.0.1",
+    "@types/node": "^20.12.12",
+    "typescript": "^5.4.5"
+  }
+}

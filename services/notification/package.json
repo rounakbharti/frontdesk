@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@frontdesk/types": "workspace:*",
+    "@frontdesk/observability": "workspace:*",
     "fastify": "^4.26.2",
     "fastify-plugin": "^4.5.1",
     "kafkajs": "^2.2.4",

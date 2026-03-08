@@ -33,3 +33,18 @@ scrape_configs:
     static_configs:
       - targets: ["host.docker.internal:4005"]
     metrics_path: /metrics
+
+  - job_name: "kb-indexer-worker"
+    static_configs:
+      - targets: ["host.docker.internal:4006"]
+    metrics_path: /metrics
+
+  - job_name: "timeout-worker"
+    static_configs:
+      - targets: ["host.docker.internal:4007"]
+    metrics_path: /metrics
+
+  - job_name: "audit-worker"
+    static_configs:
+      - targets: ["host.docker.internal:4008"]
+    metrics_path: /metrics

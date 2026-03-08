@@ -24,6 +24,9 @@
     "workers/*"
   ],
   "devDependencies": {
+    "@hapi/catbox": "^12.1.1",
+    "@hapi/iron": "^7.0.1",
+    "@hapi/shot": "^6.0.1",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",

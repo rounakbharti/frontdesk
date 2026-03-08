@@ -1,9 +1,12 @@
+import 'dotenv/config';
+import { initTracing, metricsPlugin } from '@frontdesk/observability';
+initTracing('agent-service');
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { connectKafka, disconnectKafka } from './kafka';
 import routes from './api/routes';
-import 'dotenv/config';
 
 const port = parseInt(process.env.PORT || '3001', 10);
 const host = process.env.HOST || '0.0.0.0';
@@ -16,6 +19,7 @@ fastify.setSerializerCompiler(serializerCompiler);
 async function start() {
   try {
     await fastify.register(cors, { origin: '*' });
+    await fastify.register(metricsPlugin);
     await fastify.register(routes);
 
     await connectKafka();

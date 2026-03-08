@@ -24,17 +24,21 @@ switch ($Command) {
     "up" {
         $flags = @()
         if ($Arg2 -eq "observability") { $flags += "--profile", "observability" }
-        Write-Info "Starting infrastructure stack (profile: $(if ($Arg2 -ne '') { $Arg2 } else { 'default' }))..."
+        
+        $profileName = "default"
+        if ($Arg2 -ne "") { $profileName = $Arg2 }
+        Write-Info "Starting infrastructure stack (profile: $profileName)..."
+        
         docker compose -f $ComposeFile -p $ProjectName --env-file $EnvFile @flags up -d --build --remove-orphans
         Write-Ok "Stack is up."
         Write-Ok "  Postgres:       postgresql://frontdesk:frontdesk_secret@localhost:5434/frontdesk"
         Write-Ok "  Redis:          redis://localhost:6379"
         Write-Ok "  Kafka:          localhost:9092"
         Write-Ok "  Elasticsearch:  http://localhost:9200"
+        
         if ($Arg2 -eq "observability") {
             Write-Ok "  Jaeger UI:      http://localhost:16686"
             Write-Ok "  Prometheus:     http://localhost:9090"
-            Write-Ok "  Kibana:         http://localhost:5601"
         }
     }
     "down" {

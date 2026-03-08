@@ -19,6 +19,7 @@
     "@fastify/rate-limit": "^9.1.0",
     "@fastify/sensible": "^5.5.0",
     "@frontdesk/types": "workspace:^",
+    "@frontdesk/observability": "workspace:^",
     "@opentelemetry/api": "^1.7.0",
     "axios": "^1.6.7",
     "dotenv": "^16.4.5",

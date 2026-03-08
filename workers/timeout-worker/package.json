@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@frontdesk/types": "workspace:*",
+    "@frontdesk/observability": "workspace:*",
     "@opentelemetry/api": "^1.7.0",
+    "fastify": "^4.26.2",
     "dotenv": "^16.4.5",
     "ioredis": "^5.3.2",
     "kafkajs": "^2.2.4",

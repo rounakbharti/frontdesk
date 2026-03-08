@@ -1,9 +1,15 @@
+import { resolve } from 'path';
+import dotenv from 'dotenv';
+dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
+
+import { initTracing, metricsPlugin } from '@frontdesk/observability';
+initTracing('timeout-worker');
+
+import Fastify from 'fastify';
 import { Kafka } from 'kafkajs';
 import Redis from 'ioredis';
 import pg from 'pg';
 import { randomUUID } from 'crypto';
-import dotenv from 'dotenv';
-import { resolve } from 'path';
 import pino from 'pino';
 import {
   HelpRequestStatus,
@@ -11,8 +17,6 @@ import {
   RedisKeys,
   HelpRequestTimedOutEventSchema,
 } from '@frontdesk/types';
-
-dotenv.config({ path: resolve(__dirname, '../../../.env') });
 
 const log = pino({ 
   level: process.env.LOG_LEVEL || 'info',
@@ -141,6 +145,12 @@ async function processTimeouts() {
 async function run() {
   log.info('Timeout worker starting...');
   await producer.connect();
+
+  // Start minimal metrics server for Prometheus
+  const metricsApp = Fastify();
+  await metricsApp.register(metricsPlugin);
+  await metricsApp.listen({ port: 4007, host: '0.0.0.0' });
+  log.info('Metrics server listening on port 4007');
 
   // Polling loop
   const TICK_MS = 5000;

@@ -1,15 +1,18 @@
+import { resolve } from 'path';
+import dotenv from 'dotenv';
+dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
+
+import { initTracing, metricsPlugin } from '@frontdesk/observability';
+initTracing('kb-service');
+
 import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { Kafka } from 'kafkajs';
-import dotenv from 'dotenv';
-import { resolve } from 'path';
 import { pool } from './db';
 import { ensureIndex, indexDocument } from './es';
 import type { KbDocument } from './es';
 import routes from './routes';
 import { KafkaTopics, KbLearnEventSchema } from '@frontdesk/types';
-
-dotenv.config({ path: resolve(__dirname, '../../../.env') });
 
 const app = Fastify({ logger: true });
 app.setValidatorCompiler(validatorCompiler);
@@ -68,6 +71,7 @@ async function start(): Promise<void> {
     app.log.info('Postgres connection OK');
 
     // 3. Register HTTP routes
+    await app.register(metricsPlugin);
     await app.register(routes);
 
     // 4. Start Kafka consumer (background)

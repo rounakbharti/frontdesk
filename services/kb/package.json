@@ -19,6 +19,7 @@
     "@fastify/helmet": "^11.1.1",
     "@fastify/sensible": "^5.5.0",
     "@frontdesk/types": "workspace:*",
+    "@frontdesk/observability": "workspace:*",
     "@opentelemetry/api": "^1.7.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.26.2",

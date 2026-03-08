@@ -1,3 +1,7 @@
+import 'dotenv/config';
+import { initTracing, metricsPlugin } from '@frontdesk/observability';
+initTracing('help-request-service');
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
@@ -5,7 +9,6 @@ import { connectKafka, disconnectKafka } from './kafka';
 import { pool } from './db';
 import { redis } from './redis';
 import routes from './api/routes';
-import 'dotenv/config';
 
 const port = parseInt(process.env.PORT || '3002', 10);
 const host = process.env.HOST || '0.0.0.0';
@@ -23,6 +26,7 @@ async function start() {
       origin: '*', // For development
     });
 
+    await fastify.register(metricsPlugin);
     await fastify.register(routes);
 
     await connectKafka();

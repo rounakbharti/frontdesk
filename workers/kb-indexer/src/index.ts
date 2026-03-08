@@ -1,17 +1,21 @@
+import { resolve } from 'path';
+import dotenv from 'dotenv';
+dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
+
+import { initTracing, metricsPlugin } from '@frontdesk/observability';
+initTracing('kb-indexer-worker');
+
+import Fastify from 'fastify';
 import { Kafka } from 'kafkajs';
 import type { Producer } from 'kafkajs';
 import pg from 'pg';
 import { randomUUID } from 'crypto';
-import dotenv from 'dotenv';
-import { resolve } from 'path';
 import pino from 'pino';
 import {
   SupervisorAnsweredEventSchema,
   KafkaTopics,
   KbLearnEventSchema,
 } from '@frontdesk/types';
-
-dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
 
 const log = pino({ level: process.env.LOG_LEVEL || 'info' });
 
@@ -100,6 +104,12 @@ async function start(): Promise<void> {
   await consumer.subscribe({ topic: KafkaTopics.SUPERVISOR_ANSWERED, fromBeginning: false });
 
   log.info('kb-indexer worker started — listening on supervisor.answered');
+
+  // Start minimal metrics server for Prometheus
+  const metricsApp = Fastify();
+  await metricsApp.register(metricsPlugin);
+  await metricsApp.listen({ port: 4006, host: '0.0.0.0' });
+  log.info('Metrics server listening on port 4006');
 
   await consumer.run({
     eachMessage: async ({ message, partition }) => {
