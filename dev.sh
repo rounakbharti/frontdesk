@@ -44,7 +44,7 @@ case "$cmd" in
       $FLAGS \
       up -d --build --remove-orphans
     log_ok "Stack is up. Run './dev.sh logs' to tail logs."
-    log_ok "  Postgres:        postgresql://frontdesk:frontdesk_secret@localhost:5432/frontdesk"
+    echo -e "${GREEN}  Postgres:       postgresql://frontdesk:frontdesk_secret@localhost:5434/frontdesk${NC}"
     log_ok "  Redis:           redis://localhost:6379"
     log_ok "  Kafka:           localhost:9092"
     log_ok "  Elasticsearch:   http://localhost:9200"

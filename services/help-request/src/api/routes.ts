@@ -57,9 +57,9 @@ export default async function routes(app: FastifyInstance) {
 
       // 2. Audit log
       await client.query(`
-        INSERT INTO audit_log (help_request_id, actor, action, details)
-        VALUES ($1, $2, $3, $4)
-      `, [hrId, 'api', 'created', JSON.stringify({ call_session_id, agent_confidence })]);
+        INSERT INTO audit_log (entity_id, entity_type, actor_id, action, details)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [hrId, 'help_request', 'api', 'created', JSON.stringify({ call_session_id, agent_confidence })]);
 
       await client.query('COMMIT');
 
@@ -148,9 +148,9 @@ export default async function routes(app: FastifyInstance) {
 
       // 3. Audit log
       await client.query(`
-        INSERT INTO audit_log (help_request_id, actor, action, details)
-        VALUES ($1, $2, $3, $4)
-      `, [id, supervisor_id, 'resolved', JSON.stringify({ resolution_text, source: ResolutionSource.SUPERVISOR })]);
+        INSERT INTO audit_log (entity_id, entity_type, actor_id, action, details)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [id, 'help_request', supervisor_id, 'resolved', JSON.stringify({ resolution_text, source: ResolutionSource.SUPERVISOR })]);
 
       // We need caller_phone for the event. Let's get it from customer
       const custResult = await client.query('SELECT phone FROM customers WHERE id = $1', [hr.customer_id]);

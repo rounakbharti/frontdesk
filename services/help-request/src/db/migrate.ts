@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 const envPath = path.resolve(__dirname, '../../../../.env');
 console.log(`[help-request] Loading env from: ${envPath}`);
-dotenv.config({ path: envPath });
+dotenv.config({ path: envPath, override: true });
 
 async function runMigrations() {
   const client = new Client({

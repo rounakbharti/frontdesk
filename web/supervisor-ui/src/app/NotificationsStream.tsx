@@ -8,7 +8,7 @@ export function NotificationsStream() {
 
   useEffect(() => {
     // Connect to the Fastify Notification Service SSE endpoint
-    const eventSource = new EventSource("http://localhost:3003/notifications/stream");
+    const eventSource = new EventSource("http://localhost:4004/notifications/stream");
 
     eventSource.onmessage = (event) => {
       if (event.data === "connected") {
@@ -106,7 +106,7 @@ function ResolvingActionForm({ helpRequestId }: { helpRequestId: string }) {
     try {
       const SUPERVISOR_ID = "00000000-0000-0000-0000-000000000001"; // Hardcoded for demo
 
-      const response = await fetch(`http://localhost:3001/help-requests/${helpRequestId}/resolve`, {
+      const response = await fetch(`http://localhost:4002/help-requests/${helpRequestId}/resolve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

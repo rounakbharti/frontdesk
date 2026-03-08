@@ -373,9 +373,15 @@ importers:
 
   workers/audit-worker:
     dependencies:
+      '@frontdesk/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.9.0
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4
@@ -471,9 +477,15 @@ importers:
 
   workers/timeout-worker:
     dependencies:
+      '@frontdesk/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.9.0
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
       ioredis:
         specifier: ^5.3.2
         version: 5.10.0

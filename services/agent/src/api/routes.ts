@@ -10,7 +10,7 @@ import {
 import dotenv from 'dotenv';
 import { resolve } from 'path';
 
-dotenv.config({ path: resolve(__dirname, '../../../../.env') });
+dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
 
 // The routing threshold dictates whether we automatically answer the user or route them to a human.
 // Per architecture: >0.85 auto-resolve, otherwise human.

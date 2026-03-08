@@ -11,14 +11,14 @@ import {
   KbLearnEventSchema,
 } from '@frontdesk/types';
 
-dotenv.config({ path: resolve(__dirname, '../../../.env') });
+dotenv.config({ path: resolve(__dirname, '../../../.env'), override: true });
 
 const log = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 // ── Postgres ──────────────────────────────────────────────────────────────────
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL || 'postgresql://frontdesk:frontdesk_secret@localhost:5432/frontdesk',
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL || 'postgresql://frontdesk:frontdesk_secret@127.0.0.1:5434/frontdesk',
   max: 5,
 });
 
