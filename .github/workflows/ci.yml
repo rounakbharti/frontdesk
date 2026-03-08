@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared types
-        run: pnpm -F @frontdesk/types build
+      - name: Build shared packages
+        run: pnpm -F @frontdesk/types -F @frontdesk/observability build
 
       - name: Typecheck all workspaces
         run: pnpm --filter '!@frontdesk/nlu-adapter' -r typecheck
@@ -92,8 +92,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared types
-        run: pnpm -F @frontdesk/types build
+      - name: Build shared packages
+        run: pnpm -F @frontdesk/types -F @frontdesk/observability build
 
       - name: Run unit tests
         run: pnpm --filter '!@frontdesk/nlu-adapter' -r test
@@ -154,8 +154,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared types
-        run: pnpm -F @frontdesk/types build
+      - name: Build shared packages
+        run: pnpm -F @frontdesk/types -F @frontdesk/observability build
 
       - name: Build all TS workspaces
         run: pnpm --filter '!@frontdesk/nlu-adapter' --filter '!@frontdesk/supervisor-ui' -r build
