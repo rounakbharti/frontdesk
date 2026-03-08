@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "jest --passWithNoTests",
+    "test": "jest --passWithNoTests --forceExit",
     "test:integration": "jest --config jest.integration.config.js --passWithNoTests",
     "simulate": "tsx scripts/simulate.ts"
   },
