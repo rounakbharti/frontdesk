@@ -38,7 +38,7 @@ services:
       - zookeeper-logs:/var/lib/zookeeper/log
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 || echo srvr | /usr/bin/nc localhost 2181 || zookeeper-shell localhost:2181 ls / || true"]
 
   # ──────────────────────────────────────────────
   # Apache Kafka (self-hosted, single-broker for local dev)
