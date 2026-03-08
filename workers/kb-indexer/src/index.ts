@@ -1,4 +1,5 @@
-import { Kafka, Producer } from 'kafkajs';
+import { Kafka } from 'kafkajs';
+import type { Producer } from 'kafkajs';
 import pg from 'pg';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';

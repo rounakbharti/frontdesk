@@ -2,7 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { pool } from './db';
-import { indexDocument, searchKb, KbDocument } from './es';
+import { indexDocument, searchKb } from './es';
+import type { KbDocument } from './es';
 
 export default async function routes(app: FastifyInstance) {
   const server = app.withTypeProvider<ZodTypeProvider>();

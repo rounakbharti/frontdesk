@@ -3,8 +3,9 @@ import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod
 import { Kafka } from 'kafkajs';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
-import { ensureIndex, indexDocument, KbDocument } from './es';
 import { pool } from './db';
+import { ensureIndex, indexDocument } from './es';
+import type { KbDocument } from './es';
 import routes from './routes';
 import { KafkaTopics, KbLearnEventSchema } from '@frontdesk/types';
 

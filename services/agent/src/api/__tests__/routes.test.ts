@@ -1,3 +1,4 @@
+import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import routes from '../routes';
@@ -17,7 +18,7 @@ jest.mock('../../kb/client', () => ({
 global.fetch = jest.fn();
 
 describe('Agent Service Routes', () => {
-  let app: any;
+  let app: FastifyInstance;
 
   beforeAll(async () => {
     process.env.HELP_REQUEST_API_URL = 'http://localhost:3002';
@@ -100,6 +101,7 @@ describe('Agent Service Routes', () => {
 
     // Log the JSON if it fails so we can see the internal Fastify error
     if (response.statusCode !== 200) {
+      // eslint-disable-next-line no-console
       console.log('Low confidence Error:', response.json());
     }
     expect(response.statusCode).toBe(200);
@@ -171,6 +173,7 @@ describe('Agent Service Routes', () => {
     });
 
     if (response.statusCode !== 200) {
+      // eslint-disable-next-line no-console
       console.log('Fallback Error:', response.json());
     }
     expect(response.statusCode).toBe(200);

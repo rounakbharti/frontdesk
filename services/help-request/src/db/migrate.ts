@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Client } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
