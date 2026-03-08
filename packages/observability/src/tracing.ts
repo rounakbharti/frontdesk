@@ -26,7 +26,9 @@ export function initTracing(serviceName: string) {
 
   process.on('SIGTERM', () => {
     sdk.shutdown()
+      // eslint-disable-next-line no-console
       .then(() => console.log('Tracing terminated'))
+      // eslint-disable-next-line no-console
       .catch((error) => console.log('Error terminating tracing', error))
       .finally(() => process.exit(0));
   });

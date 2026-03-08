@@ -1,5 +1,5 @@
 import { Registry, collectDefaultMetrics, Counter, Histogram } from 'prom-client';
-import { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
 // Global registry
