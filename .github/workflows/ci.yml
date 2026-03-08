@@ -157,5 +157,8 @@ jobs:
       - name: Build shared types
         run: pnpm -F @frontdesk/types build
 
-      - name: Build all workspaces
-        run: pnpm --filter '!@frontdesk/nlu-adapter' -r build
+      - name: Build all TS workspaces
+        run: pnpm --filter '!@frontdesk/nlu-adapter' --filter '!@frontdesk/supervisor-ui' -r build
+
+      - name: Build supervisor-ui (Next.js)
+        run: pnpm --filter '@frontdesk/supervisor-ui' build
